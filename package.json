@@ -78,6 +78,7 @@
     "prettier:write": "prettier --write \"**/*.{js,json,md,sol,ts,yml}\"",
     "test": "hardhat test",
     "test:sepolia": "hardhat test --network sepolia",
+    "build": "cd frontend && npm install && npm run build",
     "build:ts": "tsc --project tsconfig.json",
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "chain": "hardhat node --network hardhat --no-deploy",
