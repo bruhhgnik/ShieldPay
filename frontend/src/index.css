@@ -54,6 +54,30 @@ header {
   gap: 12px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-switch {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.btn-switch:hover {
+  border-color: var(--accent);
+  color: var(--accent-h);
+}
+
 .logo {
   font-size: 18px;
   font-weight: 700;

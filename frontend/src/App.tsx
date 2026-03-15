@@ -67,7 +67,22 @@ export default function App() {
           <span className="logo">🛡️ ShieldPay</span>
           <span className="tagline">Confidential Onchain Payroll · Sepolia</span>
         </div>
-        <ConnectButton />
+        <div className="header-right">
+          {isConnected && (
+            <button
+              className="btn-switch"
+              onClick={() =>
+                (window.ethereum as any)?.request({
+                  method: "wallet_requestPermissions",
+                  params: [{ eth_accounts: {} }],
+                })
+              }
+            >
+              Switch Account
+            </button>
+          )}
+          <ConnectButton />
+        </div>
       </header>
 
       {/* ── Stats Bar ── */}
