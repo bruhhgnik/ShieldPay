@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useBlockNumber, useReadContract, useReadContracts } from "wagmi";
 import { PAYROLL_ADDRESS, PAYROLL_ABI } from "./lib/contracts";
 import Employer from "./pages/Employer";
 import Employee from "./pages/Employee";
@@ -21,22 +21,28 @@ export default function App() {
   const { address, isConnected } = useAccount();
   const [view, setView] = useState<View>("employer");
 
+  const { data: blockNumber } = useBlockNumber({ watch: true });
+
   const { data: employerAddress } = useReadContract({
     address: PAYROLL_ADDRESS,
     abi: PAYROLL_ABI,
     functionName: "employer",
+    query: { refetchInterval: false },
+    scopeKey: String(blockNumber),
   });
 
   const { data: payrollInfo } = useReadContract({
     address: PAYROLL_ADDRESS,
     abi: PAYROLL_ABI,
     functionName: "getPayrollInfo",
+    scopeKey: String(blockNumber),
   });
 
   const { data: employeeCount } = useReadContract({
     address: PAYROLL_ADDRESS,
     abi: PAYROLL_ABI,
     functionName: "getEmployeeCount",
+    scopeKey: String(blockNumber),
   });
 
   const count = Number(employeeCount ?? 0n);
@@ -49,6 +55,7 @@ export default function App() {
       args: [BigInt(i)] as const,
     })),
     query: { enabled: count > 0 },
+    scopeKey: String(blockNumber),
   });
 
   const { data: employeeNames } = useReadContracts({
@@ -61,6 +68,7 @@ export default function App() {
         args: [r.result as `0x${string}`] as const,
       })),
     query: { enabled: (employeeAddresses ?? []).some((r) => r.status === "success") },
+    scopeKey: String(blockNumber),
   });
 
   const isEmployer = isConnected && employerAddress?.toLowerCase() === address?.toLowerCase();
