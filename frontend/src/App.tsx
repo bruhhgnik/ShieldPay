@@ -138,6 +138,7 @@ export default function App() {
         {(employeeAddresses ?? []).map((r, i) => {
           if (r.status !== "success") return null;
           const addr = r.result as string;
+          if (addr.toLowerCase() === employerAddress?.toLowerCase()) return null;
           const name = employeeNames?.[i]?.result as string | undefined;
           return (
             <div key={addr} className="roster-row">
