@@ -3,15 +3,22 @@ import ReactDOM from "react-dom/client";
 import { WagmiProvider } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getDefaultConfig, RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
+import { connectorsForWallets, RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
+import { metaMaskWallet } from "@rainbow-me/rainbowkit/wallets";
+import { createConfig, http } from "wagmi";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./index.css";
 import App from "./App";
 
-const config = getDefaultConfig({
-  appName:   "ShieldPay",
-  projectId: import.meta.env.VITE_WC_PROJECT_ID ?? "shieldpay-demo",
-  chains:    [sepolia],
+const connectors = connectorsForWallets([{ groupName: "Recommended", wallets: [metaMaskWallet] }], {
+  appName: "ShieldPay",
+  projectId: "shieldpay",
+});
+
+const config = createConfig({
+  connectors,
+  chains: [sepolia],
+  transports: { [sepolia.id]: http(import.meta.env.VITE_ALCHEMY_RPC_URL) },
 });
 
 const queryClient = new QueryClient();
