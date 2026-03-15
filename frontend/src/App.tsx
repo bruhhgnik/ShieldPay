@@ -71,12 +71,17 @@ export default function App() {
           {isConnected && (
             <button
               className="btn-switch"
-              onClick={() =>
-                (window.ethereum as any)?.request({
+              onClick={async () => {
+                const eth = window.ethereum as any;
+                await eth?.request({
                   method: "wallet_requestPermissions",
                   params: [{ eth_accounts: {} }],
-                })
-              }
+                });
+                await eth?.request({
+                  method: "wallet_switchEthereumChain",
+                  params: [{ chainId: "0xaa36a7" }], // Sepolia
+                });
+              }}
             >
               Switch Account
             </button>
