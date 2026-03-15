@@ -6,9 +6,9 @@ import { ConfidentialToken, ConfidentialToken__factory, ShieldPayroll, ShieldPay
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const ALICE_SALARY    = 1_000n * 1_000_000n; // $1,000 USDC (6 decimals) — kept small to limit gas
-const BOB_SALARY      = 1_500n * 1_000_000n; // $1,500 USDC
-const TREASURY_FUND   = 10_000n * 1_000_000n; // $10,000 USDC treasury
+const ALICE_SALARY = 1_000n * 1_000_000n; // $1,000 USDC (6 decimals) — kept small to limit gas
+const BOB_SALARY = 1_500n * 1_000_000n; // $1,500 USDC
+const TREASURY_FUND = 10_000n * 1_000_000n; // $10,000 USDC treasury
 const ALICE_NEW_SALARY = 1_200n * 1_000_000n; // $1,200 USDC after raise
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -47,8 +47,8 @@ describe("ShieldPayroll — Sepolia E2E Flow", function () {
 
     const signers = await ethers.getSigners();
     employer = signers[0];
-    alice    = signers[1];
-    bob      = signers[2];
+    alice = signers[1];
+    bob = signers[2];
 
     const step = (n: number, msg: string) => progress(n, 4, msg);
 
@@ -96,7 +96,9 @@ describe("ShieldPayroll — Sepolia E2E Flow", function () {
   it("2. Employer adds Alice ($1,000/mo) and Bob ($1,500/mo) with encrypted salaries", async function () {
     console.log("  Encrypting Alice salary...");
     const encA = await encryptAmount(ALICE_SALARY, payrollAddress, employer.address);
-    await (await payroll.connect(employer).addEmployee(alice.address, "Alice", encA.handles[0], encA.inputProof)).wait();
+    await (
+      await payroll.connect(employer).addEmployee(alice.address, "Alice", encA.handles[0], encA.inputProof)
+    ).wait();
 
     console.log("  Encrypting Bob salary...");
     const encB = await encryptAmount(BOB_SALARY, payrollAddress, employer.address);
@@ -181,7 +183,9 @@ describe("ShieldPayroll — Sepolia E2E Flow", function () {
     console.log("  Alice decrypting cumulative balance (cycle1 + cycle2)...");
     const handleA = await payroll.connect(alice).getMyEncryptedBalance();
     const clearA = await decryptHandle(handleA, tokenAddress, alice);
-    console.log(`  Alice cumulative: $${Number(clearA) / 1_000_000} (expected $${Number(ALICE_SALARY + ALICE_NEW_SALARY) / 1_000_000})`);
+    console.log(
+      `  Alice cumulative: $${Number(clearA) / 1_000_000} (expected $${Number(ALICE_SALARY + ALICE_NEW_SALARY) / 1_000_000})`,
+    );
     expect(clearA).to.eq(ALICE_SALARY + ALICE_NEW_SALARY);
 
     console.log("  Alice verifying cycle 2 payment history...");

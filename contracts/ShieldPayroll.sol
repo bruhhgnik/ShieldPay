@@ -17,8 +17,8 @@ contract ShieldPayroll is ZamaEthereumConfig {
         address wallet;
         euint64 encryptedSalary; // encrypted monthly salary handle
         bool active;
-        uint256 lastPaidCycle;   // plaintext — reveals nothing sensitive
-        string name;             // plaintext — employer knows employee names
+        uint256 lastPaidCycle; // plaintext — reveals nothing sensitive
+        string name; // plaintext — employer knows employee names
     }
 
     // ─── State ───────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ contract ShieldPayroll is ZamaEthereumConfig {
     IConfidentialToken public immutable token;
 
     uint256 public currentPayCycle;
-    uint256 public payPeriod;       // seconds between cycles (0 = no restriction for demo)
+    uint256 public payPeriod; // seconds between cycles (0 = no restriction for demo)
     uint256 public lastPayTimestamp;
 
     mapping(address => Employee) private _employees;
@@ -282,9 +282,9 @@ contract ShieldPayroll is ZamaEthereumConfig {
     ///      - Employee can decrypt their own salary
     ///      - Employer can decrypt any salary
     function _setSalaryACL(address wallet, euint64 salary) internal {
-        FHE.allowThis(salary);                        // this contract computes with it
-        FHE.allow(salary, address(token));            // token computes with it in confidentialTransfer
-        FHE.allow(salary, wallet);                    // employee decrypts their own
-        FHE.allow(salary, employer);                  // employer decrypts any
+        FHE.allowThis(salary); // this contract computes with it
+        FHE.allow(salary, address(token)); // token computes with it in confidentialTransfer
+        FHE.allow(salary, wallet); // employee decrypts their own
+        FHE.allow(salary, employer); // employer decrypts any
     }
 }

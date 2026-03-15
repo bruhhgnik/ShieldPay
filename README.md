@@ -1,6 +1,8 @@
 # ShieldPay — Confidential Onchain Payroll
 
-A fully encrypted payroll protocol built on the [Zama Protocol](https://docs.zama.ai) (FHEVM). Employer sets encrypted salaries, executes payroll, and employees verify their own payments — all without any amount ever appearing in plaintext on-chain.
+A fully encrypted payroll protocol built on the [Zama Protocol](https://docs.zama.ai) (FHEVM). Employer sets encrypted
+salaries, executes payroll, and employees verify their own payments — all without any amount ever appearing in plaintext
+on-chain.
 
 ## How it works
 
@@ -11,10 +13,10 @@ A fully encrypted payroll protocol built on the [Zama Protocol](https://docs.zam
 
 ## Contracts (Sepolia)
 
-| Contract | Address |
-|---|---|
+| Contract                    | Address                                      |
+| --------------------------- | -------------------------------------------- |
 | `ConfidentialToken` (spUSD) | `0x8447eE83A3c368e4a33a40908C0d807C9F74DB17` |
-| `ShieldPayroll` | `0xd5053e15c093e888F5f84Aa9eFAA7a0B8aB2f83e` |
+| `ShieldPayroll`             | `0xd5053e15c093e888F5f84Aa9eFAA7a0B8aB2f83e` |
 
 ## Project Structure
 
@@ -76,23 +78,23 @@ Connect MetaMask on Sepolia. The employer wallet gets full write access; any oth
 
 ## Employer flows
 
-| Action | Description |
-|---|---|
-| Fund Treasury | Encrypts USDC amount client-side, mints to contract |
-| Add Employee | Encrypts salary, sets ACL so only employer + employee can decrypt |
-| Update Salary | Replaces salary handle; prior payment history unchanged |
-| Remove Employee | Deactivates employee; excluded from future payroll |
-| Execute Payroll | Transfers encrypted salary to each active employee |
-| View Treasury Balance | KMS re-encrypts balance handle for employer to read |
-| View Employee Salary | KMS re-encrypts salary handle for employer to read |
+| Action                | Description                                                       |
+| --------------------- | ----------------------------------------------------------------- |
+| Fund Treasury         | Encrypts USDC amount client-side, mints to contract               |
+| Add Employee          | Encrypts salary, sets ACL so only employer + employee can decrypt |
+| Update Salary         | Replaces salary handle; prior payment history unchanged           |
+| Remove Employee       | Deactivates employee; excluded from future payroll                |
+| Execute Payroll       | Transfers encrypted salary to each active employee                |
+| View Treasury Balance | KMS re-encrypts balance handle for employer to read               |
+| View Employee Salary  | KMS re-encrypts salary handle for employer to read                |
 
 ## Employee flows
 
-| Action | Description |
-|---|---|
-| View My Salary | KMS re-encrypts salary handle — only readable by that employee |
-| View My Balance | Decrypts spUSD token balance |
-| Verify Payment | Decrypts payment history for any past cycle |
+| Action          | Description                                                    |
+| --------------- | -------------------------------------------------------------- |
+| View My Salary  | KMS re-encrypts salary handle — only readable by that employee |
+| View My Balance | Decrypts spUSD token balance                                   |
+| Verify Payment  | Decrypts payment history for any past cycle                    |
 
 ## Test results
 
@@ -101,7 +103,8 @@ Connect MetaMask on Sepolia. The employer wallet gets full write access; any oth
  7 passing  — live Sepolia (4 minutes end-to-end)
 ```
 
-Sepolia E2E covers: treasury funding, employee onboarding, salary ACL, payroll cycle 1, payment history verification, salary raise + cycle 2, employee removal + cycle 3.
+Sepolia E2E covers: treasury funding, employee onboarding, salary ACL, payroll cycle 1, payment history verification,
+salary raise + cycle 2, employee removal + cycle 3.
 
 ## Architecture
 
@@ -127,7 +130,8 @@ Employer
 
 ## Known limitations
 
-See [SHIELDPAY.md](./SHIELDPAY.md) for a full list of shortcomings and mitigations, including: unbounded employee array gas cost, salary handle reuse across cycles, no native multi-employer support, and Sepolia-only deployment.
+See [SHIELDPAY.md](./SHIELDPAY.md) for a full list of shortcomings and mitigations, including: unbounded employee array
+gas cost, salary handle reuse across cycles, no native multi-employer support, and Sepolia-only deployment.
 
 ## License
 

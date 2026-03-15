@@ -20,12 +20,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(`ShieldPayroll deployed at: ${deployed.address}`);
 
   // Transfer token ownership to ShieldPayroll so it can mint/transfer
-  await execute(
-    "ConfidentialToken",
-    { from: deployer, log: true },
-    "transferOwnership",
-    deployed.address,
-  );
+  await execute("ConfidentialToken", { from: deployer, log: true }, "transferOwnership", deployed.address);
 
   console.log(`ConfidentialToken ownership transferred to ShieldPayroll`);
 };

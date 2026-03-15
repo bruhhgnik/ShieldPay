@@ -9,8 +9,8 @@ export async function getFhevmInstance(): Promise<FhevmInstance> {
   instance = await createInstance({
     kmsContractAddress: ZAMA_SEPOLIA.kmsAddress,
     aclContractAddress: ZAMA_SEPOLIA.aclAddress,
-    networkUrl:         ZAMA_SEPOLIA.networkUrl,
-    gatewayUrl:         ZAMA_SEPOLIA.relayerUrl,
+    networkUrl: ZAMA_SEPOLIA.networkUrl,
+    gatewayUrl: ZAMA_SEPOLIA.relayerUrl,
   });
   return instance;
 }
@@ -26,7 +26,7 @@ export async function encrypt64(
   input.add64(amount);
   const result = await input.encrypt();
 
-  const handle     = result.handles[0] as unknown as `0x${string}`;
+  const handle = result.handles[0] as unknown as `0x${string}`;
   const inputProof = ("0x" + Buffer.from(result.inputProof as Uint8Array).toString("hex")) as `0x${string}`;
   return { handle, inputProof };
 }
@@ -48,23 +48,16 @@ export async function decrypt64(
   const eip712 = inst.createEIP712(publicKey, contractAddress);
 
   const signature = await signTypedData({
-    domain:      eip712.domain      as Record<string, unknown>,
-    types:       eip712.types       as Record<string, unknown>,
+    domain: eip712.domain as Record<string, unknown>,
+    types: eip712.types as Record<string, unknown>,
     primaryType: "Reencrypt",
-    message:     eip712.message     as Record<string, unknown>,
+    message: eip712.message as Record<string, unknown>,
   });
 
   // reencrypt expects handle as bigint (hex → bigint)
   const handleBigInt = BigInt(handle);
 
-  const decrypted = await inst.reencrypt(
-    handleBigInt,
-    privateKey,
-    publicKey,
-    signature,
-    contractAddress,
-    userAddress,
-  );
+  const decrypted = await inst.reencrypt(handleBigInt, privateKey, publicKey, signature, contractAddress, userAddress);
 
   return decrypted;
 }
