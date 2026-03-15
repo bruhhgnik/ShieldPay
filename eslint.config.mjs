@@ -21,6 +21,7 @@ export default tseslint.config(
       "*.env",
       "*.log",
       "coverage.json",
+      "frontend/**",
     ],
   },
   eslint.configs.recommended,
@@ -51,6 +52,13 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "_", varsIgnorePattern: "_" },
       ],
+    },
+  },
+  {
+    files: ["test/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
     },
   }
 );

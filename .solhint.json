@@ -5,8 +5,15 @@
     "compiler-version": ["error", ">=0.8.4"],
     "func-visibility": ["error", { "ignoreConstructors": true }],
     "max-line-length": ["error", 120],
-    "named-parameters-mapping": "warn",
+    "named-parameters-mapping": "off",
     "no-console": "off",
-    "not-rely-on-time": "off"
+    "not-rely-on-time": "off",
+    "use-natspec": "off",
+    "const-name-snakecase": "off",
+    "gas-increment-by-one": "off",
+    "gas-struct-packing": "off",
+    "immutable-vars-naming": "off",
+    "gas-indexed-events": "off",
+    "gas-strict-inequalities": "off"
   }
 }
