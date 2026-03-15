@@ -60,6 +60,29 @@ header {
   gap: 10px;
 }
 
+/* ── Wallet area ──────────────────────────────────────────────── */
+
+.wallet-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wallet-btn-connect {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wallet-btn-connect:hover {
+  background: var(--accent-h);
+}
+
 /* ── Wallet menu ──────────────────────────────────────────────── */
 
 .wallet-menu {

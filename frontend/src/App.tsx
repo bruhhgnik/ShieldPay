@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useReadContract, useReadContracts, useDisconnect } from "wagmi";
+import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { PAYROLL_ADDRESS, PAYROLL_ABI } from "./lib/contracts";
 import Employer from "./pages/Employer";
 import Employee from "./pages/Employee";
@@ -19,9 +19,7 @@ async function switchAccount() {
 
 export default function App() {
   const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
   const [view, setView] = useState<View>("employer");
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const { data: employerAddress } = useReadContract({
     address: PAYROLL_ADDRESS,
@@ -76,38 +74,30 @@ export default function App() {
           <span className="tagline">Confidential Onchain Payroll · Sepolia</span>
         </div>
         <div className="header-right">
-          {isConnected && address ? (
-            <div className="wallet-menu">
-              <button className="wallet-btn" onClick={() => setMenuOpen((o) => !o)}>
-                <span className="wallet-addr">{shortAddr(address)}</span>
-                <span className="wallet-caret">{menuOpen ? "▲" : "▼"}</span>
-              </button>
-              {menuOpen && (
-                <div className="wallet-dropdown">
-                  <button
-                    className="wallet-item"
-                    onClick={async () => {
-                      setMenuOpen(false);
-                      await switchAccount();
-                    }}
-                  >
-                    Switch Account
-                  </button>
-                  <button
-                    className="wallet-item wallet-item-danger"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      disconnect();
-                    }}
-                  >
-                    Disconnect
-                  </button>
+          <ConnectButton.Custom>
+            {({ account, chain, openAccountModal, openConnectModal, mounted }) => {
+              const connected = mounted && account && chain;
+              return (
+                <div className="wallet-area">
+                  {connected ? (
+                    <>
+                      <button className="btn-switch" onClick={switchAccount}>
+                        Switch Account
+                      </button>
+                      <button className="wallet-btn" onClick={openAccountModal}>
+                        <span className="wallet-addr">{shortAddr(account.address)}</span>
+                        <span className="wallet-caret">▼</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button className="wallet-btn-connect" onClick={openConnectModal}>
+                      Connect Wallet
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-          ) : (
-            <ConnectButton />
-          )}
+              );
+            }}
+          </ConnectButton.Custom>
         </div>
       </header>
 
