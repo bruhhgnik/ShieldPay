@@ -29,10 +29,10 @@ function FundTreasury() {
 
       set("busy", "Sending transaction…");
       await writeContractAsync({
-        address:      PAYROLL_ADDRESS,
-        abi:          PAYROLL_ABI,
+        address: PAYROLL_ADDRESS,
+        abi: PAYROLL_ABI,
         functionName: "fundTreasury",
-        args:         [handle, inputProof],
+        args: [handle, inputProof],
       });
       set("ok", `Treasury funded with $${amount} USDC (encrypted).`);
       setAmount("");
@@ -44,8 +44,10 @@ function FundTreasury() {
   return (
     <Card title="Fund Treasury">
       <label>Amount (USDC)</label>
-      <input type="number" placeholder="10000" value={amount} onChange={e => setAmount(e.target.value)} />
-      <Btn onClick={submit} busy={status.type === "busy"}>Encrypt & Fund</Btn>
+      <input type="number" placeholder="10000" value={amount} onChange={(e) => setAmount(e.target.value)} />
+      <Btn onClick={submit} busy={status.type === "busy"}>
+        Encrypt & Fund
+      </Btn>
       <Msg status={status} />
     </Card>
   );
@@ -59,14 +61,25 @@ function TreasuryBalance() {
   const { status, set } = useStatus();
   const { signTypedDataAsync } = useSignTypedData();
 
-  const { data: handle } = useReadContract({
-    address:      PAYROLL_ADDRESS,
-    abi:          PAYROLL_ABI,
+  const { data: handle, isPending: handleLoading } = useReadContract({
+    address: PAYROLL_ADDRESS,
+    abi: PAYROLL_ABI,
     functionName: "getEncryptedTreasuryBalance",
   });
 
+  const ZERO_HANDLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
+  const hasBalance = handle && handle !== ZERO_HANDLE;
+
   async function decrypt() {
-    if (!address || !handle || handle === "0x0000000000000000000000000000000000000000000000000000000000000000") {
+    if (!address) {
+      set("err", "Connect your wallet first.");
+      return;
+    }
+    if (handleLoading) {
+      set("err", "Loading treasury data…");
+      return;
+    }
+    if (!hasBalance) {
       set("err", "No treasury balance found. Fund the treasury first.");
       return;
     }
@@ -83,7 +96,10 @@ function TreasuryBalance() {
   return (
     <Card title="Treasury Balance">
       {balance && <p className="decrypted-value">{balance}</p>}
-      <Btn onClick={decrypt} busy={status.type === "busy"}>Decrypt Balance</Btn>
+      {!handleLoading && !hasBalance && <p className="hint text-red">No balance — fund the treasury first.</p>}
+      <Btn onClick={decrypt} busy={status.type === "busy"} disabled={handleLoading || !hasBalance}>
+        Decrypt Balance
+      </Btn>
       <Msg status={status} />
     </Card>
   );
@@ -93,10 +109,10 @@ function TreasuryBalance() {
 
 function AddEmployee() {
   const { address } = useAccount();
-  const [wallet, setWallet]  = useState("");
-  const [name, setName]      = useState("");
-  const [salary, setSalary]  = useState("");
-  const { status, set }      = useStatus();
+  const [wallet, setWallet] = useState("");
+  const [name, setName] = useState("");
+  const [salary, setSalary] = useState("");
+  const { status, set } = useStatus();
   const { writeContractAsync } = useWriteContract();
 
   async function submit() {
@@ -108,13 +124,15 @@ function AddEmployee() {
 
       set("busy", "Sending transaction…");
       await writeContractAsync({
-        address:      PAYROLL_ADDRESS,
-        abi:          PAYROLL_ABI,
+        address: PAYROLL_ADDRESS,
+        abi: PAYROLL_ABI,
         functionName: "addEmployee",
-        args:         [wallet as `0x${string}`, name, handle, inputProof],
+        args: [wallet as `0x${string}`, name, handle, inputProof],
       });
       set("ok", `${name} added with encrypted salary $${salary}.`);
-      setWallet(""); setName(""); setSalary("");
+      setWallet("");
+      setName("");
+      setSalary("");
     } catch (e: unknown) {
       set("err", (e as Error).message ?? "Failed");
     }
@@ -123,12 +141,14 @@ function AddEmployee() {
   return (
     <Card title="Add Employee">
       <label>Wallet Address</label>
-      <input placeholder="0x..." value={wallet} onChange={e => setWallet(e.target.value)} />
+      <input placeholder="0x..." value={wallet} onChange={(e) => setWallet(e.target.value)} />
       <label>Name</label>
-      <input placeholder="Alice" value={name} onChange={e => setName(e.target.value)} />
+      <input placeholder="Alice" value={name} onChange={(e) => setName(e.target.value)} />
       <label>Monthly Salary (USDC)</label>
-      <input type="number" placeholder="5000" value={salary} onChange={e => setSalary(e.target.value)} />
-      <Btn onClick={submit} busy={status.type === "busy"}>Encrypt & Add</Btn>
+      <input type="number" placeholder="5000" value={salary} onChange={(e) => setSalary(e.target.value)} />
+      <Btn onClick={submit} busy={status.type === "busy"}>
+        Encrypt & Add
+      </Btn>
       <Msg status={status} />
     </Card>
   );
@@ -138,9 +158,9 @@ function AddEmployee() {
 
 function UpdateSalary() {
   const { address } = useAccount();
-  const [wallet, setWallet]  = useState("");
-  const [salary, setSalary]  = useState("");
-  const { status, set }      = useStatus();
+  const [wallet, setWallet] = useState("");
+  const [salary, setSalary] = useState("");
+  const { status, set } = useStatus();
   const { writeContractAsync } = useWriteContract();
 
   async function submit() {
@@ -152,13 +172,14 @@ function UpdateSalary() {
 
       set("busy", "Sending transaction…");
       await writeContractAsync({
-        address:      PAYROLL_ADDRESS,
-        abi:          PAYROLL_ABI,
+        address: PAYROLL_ADDRESS,
+        abi: PAYROLL_ABI,
         functionName: "updateSalary",
-        args:         [wallet as `0x${string}`, handle, inputProof],
+        args: [wallet as `0x${string}`, handle, inputProof],
       });
       set("ok", "Salary updated.");
-      setWallet(""); setSalary("");
+      setWallet("");
+      setSalary("");
     } catch (e: unknown) {
       set("err", (e as Error).message ?? "Failed");
     }
@@ -167,10 +188,12 @@ function UpdateSalary() {
   return (
     <Card title="Update Salary">
       <label>Employee Wallet</label>
-      <input placeholder="0x..." value={wallet} onChange={e => setWallet(e.target.value)} />
+      <input placeholder="0x..." value={wallet} onChange={(e) => setWallet(e.target.value)} />
       <label>New Monthly Salary (USDC)</label>
-      <input type="number" placeholder="6500" value={salary} onChange={e => setSalary(e.target.value)} />
-      <Btn onClick={submit} busy={status.type === "busy"}>Encrypt & Update</Btn>
+      <input type="number" placeholder="6500" value={salary} onChange={(e) => setSalary(e.target.value)} />
+      <Btn onClick={submit} busy={status.type === "busy"}>
+        Encrypt & Update
+      </Btn>
       <Msg status={status} />
     </Card>
   );
@@ -179,8 +202,8 @@ function UpdateSalary() {
 // ─── Remove Employee ──────────────────────────────────────────────────────────
 
 function RemoveEmployee() {
-  const [wallet, setWallet]    = useState("");
-  const { status, set }        = useStatus();
+  const [wallet, setWallet] = useState("");
+  const { status, set } = useStatus();
   const { writeContractAsync } = useWriteContract();
 
   async function submit() {
@@ -188,10 +211,10 @@ function RemoveEmployee() {
     try {
       set("busy", "Sending transaction…");
       await writeContractAsync({
-        address:      PAYROLL_ADDRESS,
-        abi:          PAYROLL_ABI,
+        address: PAYROLL_ADDRESS,
+        abi: PAYROLL_ABI,
         functionName: "removeEmployee",
-        args:         [wallet as `0x${string}`],
+        args: [wallet as `0x${string}`],
       });
       set("ok", "Employee removed.");
       setWallet("");
@@ -203,8 +226,10 @@ function RemoveEmployee() {
   return (
     <Card title="Remove Employee">
       <label>Employee Wallet</label>
-      <input placeholder="0x..." value={wallet} onChange={e => setWallet(e.target.value)} />
-      <Btn onClick={submit} busy={status.type === "busy"} danger>Remove</Btn>
+      <input placeholder="0x..." value={wallet} onChange={(e) => setWallet(e.target.value)} />
+      <Btn onClick={submit} busy={status.type === "busy"} danger>
+        Remove
+      </Btn>
       <Msg status={status} />
     </Card>
   );
@@ -213,12 +238,12 @@ function RemoveEmployee() {
 // ─── Execute Payroll ──────────────────────────────────────────────────────────
 
 function ExecutePayroll() {
-  const { status, set }        = useStatus();
+  const { status, set } = useStatus();
   const { writeContractAsync } = useWriteContract();
 
   const { data: info } = useReadContract({
-    address:      PAYROLL_ADDRESS,
-    abi:          PAYROLL_ABI,
+    address: PAYROLL_ADDRESS,
+    abi: PAYROLL_ABI,
     functionName: "getPayrollInfo",
   });
 
@@ -226,8 +251,8 @@ function ExecutePayroll() {
     try {
       set("busy", "Executing payroll…");
       await writeContractAsync({
-        address:      PAYROLL_ADDRESS,
-        abi:          PAYROLL_ABI,
+        address: PAYROLL_ADDRESS,
+        abi: PAYROLL_ABI,
         functionName: "executePayroll",
       });
       set("ok", "Payroll executed. All active employees paid.");
@@ -243,7 +268,9 @@ function ExecutePayroll() {
           Current cycle: <strong>#{String(info[0])}</strong>
         </p>
       )}
-      <Btn onClick={submit} busy={status.type === "busy"}>Run Payroll</Btn>
+      <Btn onClick={submit} busy={status.type === "busy"}>
+        Run Payroll
+      </Btn>
       <Msg status={status} />
     </Card>
   );
@@ -255,16 +282,16 @@ function ViewEmployeeSalary() {
   const { address } = useAccount();
   const [wallet, setWallet] = useState("");
   const [salary, setSalary] = useState<string | null>(null);
-  const { status, set }     = useStatus();
+  const { status, set } = useStatus();
   const { signTypedDataAsync } = useSignTypedData();
   const { writeContractAsync } = useWriteContract();
 
   const { data: handle, refetch } = useReadContract({
-    address:      PAYROLL_ADDRESS,
-    abi:          PAYROLL_ABI,
+    address: PAYROLL_ADDRESS,
+    abi: PAYROLL_ABI,
     functionName: "getEmployeeSalary",
-    args:         wallet ? [wallet as `0x${string}`] : undefined,
-    query:        { enabled: false },
+    args: wallet ? [wallet as `0x${string}`] : undefined,
+    query: { enabled: false },
   });
 
   async function decrypt() {
@@ -272,7 +299,10 @@ function ViewEmployeeSalary() {
     try {
       set("busy", "Fetching handle…");
       const { data: h } = await refetch();
-      if (!h) { set("err", "Not found"); return; }
+      if (!h) {
+        set("err", "Not found");
+        return;
+      }
 
       set("busy", "Requesting decryption…");
       const raw = await decrypt64(h as string, PAYROLL_ADDRESS, address, signTypedDataAsync);
@@ -286,9 +316,18 @@ function ViewEmployeeSalary() {
   return (
     <Card title="View Employee Salary">
       <label>Employee Wallet</label>
-      <input placeholder="0x..." value={wallet} onChange={e => { setWallet(e.target.value); setSalary(null); }} />
+      <input
+        placeholder="0x..."
+        value={wallet}
+        onChange={(e) => {
+          setWallet(e.target.value);
+          setSalary(null);
+        }}
+      />
       {salary && <p className="decrypted-value">{salary}/mo</p>}
-      <Btn onClick={decrypt} busy={status.type === "busy"}>Decrypt Salary</Btn>
+      <Btn onClick={decrypt} busy={status.type === "busy"}>
+        Decrypt Salary
+      </Btn>
       <Msg status={status} />
     </Card>
   );
@@ -299,11 +338,7 @@ function ViewEmployeeSalary() {
 export default function Employer({ isEmployer }: { isEmployer: boolean }) {
   return (
     <div className="page">
-      {!isEmployer && (
-        <div className="warning">
-          ⚠️ Connected wallet is not the employer. Write actions will fail.
-        </div>
-      )}
+      {!isEmployer && <div className="warning">⚠️ Connected wallet is not the employer. Write actions will fail.</div>}
       <div className="grid">
         <FundTreasury />
         <TreasuryBalance />
@@ -328,18 +363,21 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function Btn({ onClick, busy, danger, children }: {
+function Btn({
+  onClick,
+  busy,
+  danger,
+  disabled,
+  children,
+}: {
   onClick: () => void;
   busy?: boolean;
   danger?: boolean;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <button
-      className={`btn ${danger ? "btn-danger" : ""}`}
-      onClick={onClick}
-      disabled={busy}
-    >
+    <button className={`btn ${danger ? "btn-danger" : ""}`} onClick={onClick} disabled={busy || disabled}>
       {busy ? "…" : children}
     </button>
   );
