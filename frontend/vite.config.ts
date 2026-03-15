@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    exclude: ["fhevmjs"],
+    exclude: ["fhevmjs", "@zama-fhe/relayer-sdk/web"],
   },
   resolve: {
     alias: {

@@ -1,16 +1,25 @@
-import { createInstance } from "fhevmjs";
-import type { FhevmInstance } from "fhevmjs";
+import { createInstance, initSDK, SepoliaConfigV1 } from "@zama-fhe/relayer-sdk/web";
 import { ZAMA_SEPOLIA } from "./contracts";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FhevmInstance = Awaited<ReturnType<typeof createInstance>>;
+
 let instance: FhevmInstance | null = null;
+let sdkReady = false;
+
+async function ensureSDK() {
+  if (!sdkReady) {
+    await initSDK();
+    sdkReady = true;
+  }
+}
 
 export async function getFhevmInstance(): Promise<FhevmInstance> {
   if (instance) return instance;
+  await ensureSDK();
   instance = await createInstance({
-    kmsContractAddress: ZAMA_SEPOLIA.kmsAddress,
-    aclContractAddress: ZAMA_SEPOLIA.aclAddress,
-    networkUrl: ZAMA_SEPOLIA.networkUrl,
-    gatewayUrl: ZAMA_SEPOLIA.relayerUrl,
+    ...SepoliaConfigV1,
+    network: ZAMA_SEPOLIA.networkUrl,
   });
   return instance;
 }
@@ -26,12 +35,12 @@ export async function encrypt64(
   input.add64(amount);
   const result = await input.encrypt();
 
-  const handle = result.handles[0] as unknown as `0x${string}`;
-  const inputProof = ("0x" + Buffer.from(result.inputProof as Uint8Array).toString("hex")) as `0x${string}`;
+  const handle = ("0x" + Buffer.from(result.handles[0]).toString("hex")) as `0x${string}`;
+  const inputProof = ("0x" + Buffer.from(result.inputProof).toString("hex")) as `0x${string}`;
   return { handle, inputProof };
 }
 
-// Re-encrypt a handle so the user can read the plaintext
+// Decrypt a handle using userDecrypt (replaces the old reencrypt flow)
 export async function decrypt64(
   handle: string,
   contractAddress: string,
@@ -45,19 +54,31 @@ export async function decrypt64(
 ): Promise<bigint> {
   const inst = await getFhevmInstance();
   const { publicKey, privateKey } = inst.generateKeypair();
-  const eip712 = inst.createEIP712(publicKey, contractAddress);
+
+  const startTimestamp = Math.floor(Date.now() / 1000);
+  const durationDays = 1;
+
+  const eip712 = inst.createEIP712(publicKey, [contractAddress], startTimestamp, durationDays);
 
   const signature = await signTypedData({
     domain: eip712.domain as Record<string, unknown>,
     types: eip712.types as Record<string, unknown>,
-    primaryType: "Reencrypt",
+    primaryType: eip712.primaryType as string,
     message: eip712.message as Record<string, unknown>,
   });
 
-  // reencrypt expects handle as bigint (hex → bigint)
-  const handleBigInt = BigInt(handle);
+  const results = await inst.userDecrypt(
+    [{ handle, contractAddress }],
+    privateKey,
+    publicKey,
+    signature,
+    [contractAddress],
+    userAddress,
+    startTimestamp,
+    durationDays,
+  );
 
-  const decrypted = await inst.reencrypt(handleBigInt, privateKey, publicKey, signature, contractAddress, userAddress);
-
-  return decrypted;
+  // results is { [handleHex]: bigint }
+  const value = Object.values(results)[0] as bigint;
+  return value;
 }
