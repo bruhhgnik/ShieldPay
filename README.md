@@ -1,110 +1,134 @@
-# FHEVM Hardhat Template
+# ShieldPay — Confidential Onchain Payroll
 
-A Hardhat-based template for developing Fully Homomorphic Encryption (FHE) enabled Solidity smart contracts using the
-FHEVM protocol by Zama.
+A fully encrypted payroll protocol built on the [Zama Protocol](https://docs.zama.ai) (FHEVM). Employer sets encrypted salaries, executes payroll, and employees verify their own payments — all without any amount ever appearing in plaintext on-chain.
 
-## Quick Start
+## How it works
 
-For detailed instructions see:
-[FHEVM Hardhat Quick Start Tutorial](https://docs.zama.ai/protocol/solidity-guides/getting-started/quick-start-tutorial)
+- Salaries and balances are stored as `euint64` ciphertext handles on-chain
+- Only the employer can decrypt any salary; each employee can only decrypt their own
+- Payroll transfers happen entirely in ciphertext via FHE arithmetic
+- Decryption happens off-chain through the Zama KMS using an EIP-712 signed request
+
+## Contracts (Sepolia)
+
+| Contract | Address |
+|---|---|
+| `ConfidentialToken` (spUSD) | `0x8447eE83A3c368e4a33a40908C0d807C9F74DB17` |
+| `ShieldPayroll` | `0xd5053e15c093e888F5f84Aa9eFAA7a0B8aB2f83e` |
+
+## Project Structure
+
+```
+contracts/
+  ConfidentialToken.sol      # ERC-7984 compatible token with encrypted balances
+  ShieldPayroll.sol          # Core payroll logic
+  interfaces/
+    IConfidentialToken.sol
+deploy/
+  01_deploy_token.ts
+  02_deploy_payroll.ts
+test/
+  ShieldPayroll.ts           # 41 mock tests (full coverage)
+  ShieldPayrollSepolia.ts    # 7-step E2E test on live Sepolia
+frontend/                    # Vite + React + RainbowKit UI
+  src/
+    pages/
+      Employer.tsx           # Fund, add employees, execute payroll, decrypt
+      Employee.tsx           # View salary, balance, payment history
+    lib/
+      contracts.ts           # ABIs + deployed addresses
+      fhevm.ts               # fhevmjs encrypt/decrypt helpers
+SHIELDPAY.md                 # Full implementation doc + competitive analysis
+```
+
+## Quickstart
 
 ### Prerequisites
 
-- **Node.js**: Version 20 or higher
-- **npm or yarn/pnpm**: Package manager
+- Node.js 20+
+- A Sepolia wallet with test ETH ([faucet](https://sepoliafaucet.com))
+- Alchemy or Infura Sepolia RPC URL
 
-### Installation
+### Smart contracts
 
-1. **Install dependencies**
+```bash
+npm install
 
-   ```bash
-   npm install
-   ```
+# Run tests on local mock FHEVM (fast, no gas)
+npx hardhat test
 
-2. **Set up environment variables**
+# Run E2E flow on Sepolia
+HARDHAT_VAR_MNEMONIC="your mnemonic here" npx hardhat test test/ShieldPayrollSepolia.ts --network sepolia
 
-   ```bash
-   npx hardhat vars set MNEMONIC
-
-   # Set your Infura API key for network access
-   npx hardhat vars set INFURA_API_KEY
-
-   # Optional: Set Etherscan API key for contract verification
-   npx hardhat vars set ETHERSCAN_API_KEY
-   ```
-
-3. **Compile and test**
-
-   ```bash
-   npm run compile
-   npm run test
-   ```
-
-4. **Deploy to local network**
-
-   ```bash
-   # Start a local FHEVM-ready node
-   npx hardhat node
-   # Deploy to local network
-   npx hardhat deploy --network localhost
-   ```
-
-5. **Deploy to Sepolia Testnet**
-
-   ```bash
-   # Deploy to Sepolia
-   npx hardhat deploy --network sepolia
-   # Verify contract on Etherscan
-   npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
-   ```
-
-6. **Test on Sepolia Testnet**
-
-   ```bash
-   # Once deployed, you can run a simple test on Sepolia.
-   npx hardhat test --network sepolia
-   ```
-
-## 📁 Project Structure
-
-```
-fhevm-hardhat-template/
-├── contracts/           # Smart contract source files
-│   └── FHECounter.sol   # Example FHE counter contract
-├── deploy/              # Deployment scripts
-├── tasks/               # Hardhat custom tasks
-├── test/                # Test files
-├── hardhat.config.ts    # Hardhat configuration
-└── package.json         # Dependencies and scripts
+# Deploy your own instance to Sepolia
+HARDHAT_VAR_MNEMONIC="your mnemonic here" npx hardhat deploy --network sepolia
 ```
 
-## 📜 Available Scripts
+### Frontend
 
-| Script             | Description              |
-| ------------------ | ------------------------ |
-| `npm run compile`  | Compile all contracts    |
-| `npm run test`     | Run all tests            |
-| `npm run coverage` | Generate coverage report |
-| `npm run lint`     | Run linting checks       |
-| `npm run clean`    | Clean build artifacts    |
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:3000
+```
 
-## 📚 Documentation
+Connect MetaMask on Sepolia. The employer wallet gets full write access; any other address gets the employee view.
 
-- [FHEVM Documentation](https://docs.zama.ai/fhevm)
-- [FHEVM Hardhat Setup Guide](https://docs.zama.ai/protocol/solidity-guides/getting-started/setup)
-- [FHEVM Testing Guide](https://docs.zama.ai/protocol/solidity-guides/development-guide/hardhat/write_test)
-- [FHEVM Hardhat Plugin](https://docs.zama.ai/protocol/solidity-guides/development-guide/hardhat)
+## Employer flows
 
-## 📄 License
+| Action | Description |
+|---|---|
+| Fund Treasury | Encrypts USDC amount client-side, mints to contract |
+| Add Employee | Encrypts salary, sets ACL so only employer + employee can decrypt |
+| Update Salary | Replaces salary handle; prior payment history unchanged |
+| Remove Employee | Deactivates employee; excluded from future payroll |
+| Execute Payroll | Transfers encrypted salary to each active employee |
+| View Treasury Balance | KMS re-encrypts balance handle for employer to read |
+| View Employee Salary | KMS re-encrypts salary handle for employer to read |
 
-This project is licensed under the BSD-3-Clause-Clear License. See the [LICENSE](LICENSE) file for details.
+## Employee flows
 
-## 🆘 Support
+| Action | Description |
+|---|---|
+| View My Salary | KMS re-encrypts salary handle — only readable by that employee |
+| View My Balance | Decrypts spUSD token balance |
+| Verify Payment | Decrypts payment history for any past cycle |
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/zama-ai/fhevm/issues)
-- **Documentation**: [FHEVM Docs](https://docs.zama.ai)
-- **Community**: [Zama Discord](https://discord.gg/zama)
+## Test results
 
----
+```
+41 passing  — local mock FHEVM
+ 7 passing  — live Sepolia (4 minutes end-to-end)
+```
 
-**Built with ❤️ by the Zama team**
+Sepolia E2E covers: treasury funding, employee onboarding, salary ACL, payroll cycle 1, payment history verification, salary raise + cycle 2, employee removal + cycle 3.
+
+## Architecture
+
+```
+Employer
+  │
+  ├─ fundTreasury(encAmount, proof)
+  │     └─ FHE.fromExternal → euint64 handle
+  │     └─ FHE.allow(handle, token)
+  │     └─ ConfidentialToken.mint(this, handle)
+  │
+  ├─ addEmployee(wallet, name, encSalary, proof)
+  │     └─ FHE.fromExternal → euint64 handle
+  │     └─ ACL: allowThis + allow(token) + allow(wallet) + allow(employer)
+  │
+  └─ executePayroll()
+        └─ for each active employee:
+              ConfidentialToken.confidentialTransfer(this, wallet, encSalary)
+                └─ FHE.ge(balance, amount) → encrypted guard (no revert)
+                └─ FHE.select(hasFunds, amount, 0)
+                └─ FHE.sub / FHE.add → new handles, ACL re-set
+```
+
+## Known limitations
+
+See [SHIELDPAY.md](./SHIELDPAY.md) for a full list of shortcomings and mitigations, including: unbounded employee array gas cost, salary handle reuse across cycles, no native multi-employer support, and Sepolia-only deployment.
+
+## License
+
+MIT
