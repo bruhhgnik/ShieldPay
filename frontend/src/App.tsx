@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useReadContract, useReadContracts, useDisconnect } from "wagmi";
 import { PAYROLL_ADDRESS, PAYROLL_ABI } from "./lib/contracts";
 import Employer from "./pages/Employer";
 import Employee from "./pages/Employee";
@@ -11,9 +11,17 @@ function shortAddr(addr: string) {
   return addr.slice(0, 6) + "…" + addr.slice(-4);
 }
 
+async function switchAccount() {
+  const eth = window.ethereum as any;
+  await eth?.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
+  await eth?.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0xaa36a7" }] });
+}
+
 export default function App() {
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
   const [view, setView] = useState<View>("employer");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const { data: employerAddress } = useReadContract({
     address: PAYROLL_ADDRESS,
@@ -68,25 +76,38 @@ export default function App() {
           <span className="tagline">Confidential Onchain Payroll · Sepolia</span>
         </div>
         <div className="header-right">
-          {isConnected && (
-            <button
-              className="btn-switch"
-              onClick={async () => {
-                const eth = window.ethereum as any;
-                await eth?.request({
-                  method: "wallet_requestPermissions",
-                  params: [{ eth_accounts: {} }],
-                });
-                await eth?.request({
-                  method: "wallet_switchEthereumChain",
-                  params: [{ chainId: "0xaa36a7" }], // Sepolia
-                });
-              }}
-            >
-              Switch Account
-            </button>
+          {isConnected && address ? (
+            <div className="wallet-menu">
+              <button className="wallet-btn" onClick={() => setMenuOpen((o) => !o)}>
+                <span className="wallet-addr">{shortAddr(address)}</span>
+                <span className="wallet-caret">{menuOpen ? "▲" : "▼"}</span>
+              </button>
+              {menuOpen && (
+                <div className="wallet-dropdown">
+                  <button
+                    className="wallet-item"
+                    onClick={async () => {
+                      setMenuOpen(false);
+                      await switchAccount();
+                    }}
+                  >
+                    Switch Account
+                  </button>
+                  <button
+                    className="wallet-item wallet-item-danger"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      disconnect();
+                    }}
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <ConnectButton />
           )}
-          <ConnectButton />
         </div>
       </header>
 
