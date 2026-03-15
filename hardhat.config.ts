@@ -11,6 +11,7 @@ import "solidity-coverage";
 
 import "./tasks/accounts";
 import "./tasks/FHECounter";
+// import "./tasks/ShieldPayroll"; // uncomment after task file is created
 
 // Run 'npx hardhat vars setup' to see the list of variables that need to be set
 
@@ -79,6 +80,7 @@ const config: HardhatUserConfig = {
         runs: 800,
       },
       evmVersion: "cancun",
+      viaIR: true, // required for complex FHE contracts ("stack too deep")
     },
   },
   typechain: {
