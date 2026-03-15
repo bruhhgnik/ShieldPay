@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import { createInstance, initSDK, SepoliaConfigV1 } from "@zama-fhe/relayer-sdk/web";
 import { ZAMA_SEPOLIA } from "./contracts";
 
