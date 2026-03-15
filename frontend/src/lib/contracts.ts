@@ -160,7 +160,7 @@ export const ZAMA_SEPOLIA = {
   aclAddress: "0xf0Ffdc93b7E186bC2f8CB3dAA75D86d1930A433D",
   kmsAddress: "0xbE0E383937d564D7FF0BC3b46c51f0bF8d5C311A",
   relayerUrl: "https://relayer.testnet.zama.org",
-  networkUrl: "https://eth-sepolia.g.alchemy.com/v2/D0zuv4GsCAFG-EpaH-J2m",
+  networkUrl: import.meta.env.VITE_ALCHEMY_RPC_URL ?? "https://eth-sepolia.g.alchemy.com/v2/D0zuv4GsCAFG-EpaH-J2m",
 };
 
 export const DECIMALS = 6n; // USDC convention
