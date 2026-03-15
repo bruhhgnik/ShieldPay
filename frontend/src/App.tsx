@@ -1,32 +1,60 @@
 import { useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { PAYROLL_ADDRESS, PAYROLL_ABI } from "./lib/contracts";
 import Employer from "./pages/Employer";
 import Employee from "./pages/Employee";
 
 type View = "employer" | "employee";
 
+function shortAddr(addr: string) {
+  return addr.slice(0, 6) + "…" + addr.slice(-4);
+}
+
 export default function App() {
   const { address, isConnected } = useAccount();
   const [view, setView] = useState<View>("employer");
 
   const { data: employerAddress } = useReadContract({
-    address:      PAYROLL_ADDRESS,
-    abi:          PAYROLL_ABI,
+    address: PAYROLL_ADDRESS,
+    abi: PAYROLL_ABI,
     functionName: "employer",
   });
 
   const { data: payrollInfo } = useReadContract({
-    address:      PAYROLL_ADDRESS,
-    abi:          PAYROLL_ABI,
+    address: PAYROLL_ADDRESS,
+    abi: PAYROLL_ABI,
     functionName: "getPayrollInfo",
   });
 
   const { data: employeeCount } = useReadContract({
-    address:      PAYROLL_ADDRESS,
-    abi:          PAYROLL_ABI,
+    address: PAYROLL_ADDRESS,
+    abi: PAYROLL_ABI,
     functionName: "getEmployeeCount",
+  });
+
+  const count = Number(employeeCount ?? 0n);
+
+  const { data: employeeAddresses } = useReadContracts({
+    contracts: Array.from({ length: count }, (_, i) => ({
+      address: PAYROLL_ADDRESS,
+      abi: PAYROLL_ABI,
+      functionName: "employeeList" as const,
+      args: [BigInt(i)] as const,
+    })),
+    query: { enabled: count > 0 },
+  });
+
+  const { data: employeeNames } = useReadContracts({
+    contracts: (employeeAddresses ?? [])
+      .filter((r) => r.status === "success")
+      .map((r) => ({
+        address: PAYROLL_ADDRESS,
+        abi: PAYROLL_ABI,
+        functionName: "getEmployeeName" as const,
+        args: [r.result as `0x${string}`] as const,
+      })),
+    query: { enabled: (employeeAddresses ?? []).some((r) => r.status === "success") },
   });
 
   const isEmployer = isConnected && employerAddress?.toLowerCase() === address?.toLowerCase();
@@ -54,9 +82,7 @@ export default function App() {
         </div>
         <div className="stat">
           <span className="stat-label">Your Role</span>
-          <span className="stat-value role">
-            {!isConnected ? "—" : isEmployer ? "Employer" : "Employee"}
-          </span>
+          <span className="stat-value role">{!isConnected ? "—" : isEmployer ? "Employer" : "Employee"}</span>
         </div>
         <div className="stat">
           <span className="stat-label">Contract</span>
@@ -64,18 +90,31 @@ export default function App() {
         </div>
       </div>
 
+      {/* ── Roster ── */}
+      <div className="roster">
+        <div className="roster-row">
+          <span className="roster-badge employer-badge">Employer</span>
+          <span className="roster-addr mono">{employerAddress ? employerAddress : "—"}</span>
+        </div>
+        {(employeeAddresses ?? []).map((r, i) => {
+          if (r.status !== "success") return null;
+          const addr = r.result as string;
+          const name = employeeNames?.[i]?.result as string | undefined;
+          return (
+            <div key={addr} className="roster-row">
+              <span className="roster-badge employee-badge">Employee{name ? ` · ${name}` : ""}</span>
+              <span className="roster-addr mono">{addr}</span>
+            </div>
+          );
+        })}
+      </div>
+
       {/* ── Nav Tabs ── */}
       <nav className="tabs">
-        <button
-          className={view === "employer" ? "tab active" : "tab"}
-          onClick={() => setView("employer")}
-        >
+        <button className={view === "employer" ? "tab active" : "tab"} onClick={() => setView("employer")}>
           Employer
         </button>
-        <button
-          className={view === "employee" ? "tab active" : "tab"}
-          onClick={() => setView("employee")}
-        >
+        <button className={view === "employee" ? "tab active" : "tab"} onClick={() => setView("employee")}>
           Employee
         </button>
       </nav>
@@ -85,9 +124,6 @@ export default function App() {
         {!isConnected ? (
           <div className="empty-state">
             <p>Connect your wallet to interact with ShieldPay.</p>
-            <p className="hint">
-              Employer: <code>{employerAddress ?? "..."}</code>
-            </p>
           </div>
         ) : view === "employer" ? (
           <Employer isEmployer={isEmployer} />
