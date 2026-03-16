@@ -135,18 +135,23 @@ export default function App() {
           <span className="roster-badge employer-badge">Employer</span>
           <span className="roster-addr mono">{employerAddress ? employerAddress : "—"}</span>
         </div>
-        {(employeeAddresses ?? []).map((r, i) => {
-          if (r.status !== "success") return null;
-          const addr = r.result as string;
-          if (addr.toLowerCase() === employerAddress?.toLowerCase()) return null;
-          const name = employeeNames?.[i]?.result as string | undefined;
-          return (
-            <div key={addr} className="roster-row">
-              <span className="roster-badge employee-badge">Employee{name ? ` · ${name}` : ""}</span>
-              <span className="roster-addr mono">{addr}</span>
-            </div>
-          );
-        })}
+        {(() => {
+          const seen = new Set<string>();
+          return (employeeAddresses ?? []).map((r, i) => {
+            if (r.status !== "success") return null;
+            const addr = (r.result as string).toLowerCase();
+            if (addr === employerAddress?.toLowerCase()) return null;
+            if (seen.has(addr)) return null;
+            seen.add(addr);
+            const name = employeeNames?.[i]?.result as string | undefined;
+            return (
+              <div key={addr} className="roster-row">
+                <span className="roster-badge employee-badge">Employee{name ? ` · ${name}` : ""}</span>
+                <span className="roster-addr mono">{r.result as string}</span>
+              </div>
+            );
+          });
+        })()}
       </div>
 
       {/* ── Nav Tabs ── */}
