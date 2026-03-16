@@ -78,8 +78,8 @@ export default function App() {
       {/* ── Header ── */}
       <header>
         <div className="header-left">
-          <span className="logo">🛡️ ShieldPay</span>
-          <span className="tagline">Confidential Onchain Payroll · Sepolia</span>
+          <span className="logo">ShieldPay</span>
+          <span className="tagline">Confidential Payroll · Sepolia</span>
         </div>
         <div className="header-right">
           <ConnectButton.Custom>
@@ -131,10 +131,13 @@ export default function App() {
 
       {/* ── Roster ── */}
       <div className="roster">
-        <div className="roster-row">
-          <span className="roster-badge employer-badge">Employer</span>
-          <span className="roster-addr mono">{employerAddress ? employerAddress : "—"}</span>
-        </div>
+        {employerAddress && (
+          <div className="roster-row">
+            <span className="roster-badge employer-badge">Employer</span>
+            <span className="roster-sep">·</span>
+            <span className="roster-addr">{employerAddress}</span>
+          </div>
+        )}
         {(() => {
           const seen = new Set<string>();
           return (employeeAddresses ?? []).map((r, i) => {
@@ -146,12 +149,18 @@ export default function App() {
             const name = employeeNames?.[i]?.result as string | undefined;
             return (
               <div key={addr} className="roster-row">
-                <span className="roster-badge employee-badge">Employee{name ? ` · ${name}` : ""}</span>
-                <span className="roster-addr mono">{r.result as string}</span>
+                <span className="roster-badge employee-badge">
+                  {name ? name : "Employee"}
+                </span>
+                <span className="roster-sep">·</span>
+                <span className="roster-addr">{r.result as string}</span>
               </div>
             );
           });
         })()}
+        {!employerAddress && !count && (
+          <span className="hint text-muted" style={{ fontSize: 12 }}>No participants yet</span>
+        )}
       </div>
 
       {/* ── Nav Tabs ── */}
@@ -168,7 +177,9 @@ export default function App() {
       <main>
         {!isConnected ? (
           <div className="empty-state">
-            <p>Connect your wallet to interact with ShieldPay.</p>
+            <div className="empty-state-icon">🔐</div>
+            <p style={{ fontWeight: 600, color: "var(--text-soft)" }}>Connect your wallet to get started</p>
+            <p style={{ fontSize: 12 }}>ShieldPay uses FHE to keep all salary data encrypted on-chain</p>
           </div>
         ) : view === "employer" ? (
           <Employer isEmployer={isEmployer} />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { useSignTypedData } from "wagmi";
 import { PAYROLL_ADDRESS, TOKEN_ADDRESS, PAYROLL_ABI, formatUSDC, SCALE } from "../lib/contracts";
 import { encrypt64, decrypt64 } from "../lib/fhevm";
@@ -26,7 +26,6 @@ function FundTreasury() {
       set("busy", "Encrypting amount…");
       const usdc = BigInt(Math.round(parseFloat(amount) * Number(SCALE)));
       const { handle, inputProof } = await encrypt64(usdc, PAYROLL_ADDRESS, address);
-
       set("busy", "Sending transaction…");
       await writeContractAsync({
         address: PAYROLL_ADDRESS,
@@ -34,7 +33,7 @@ function FundTreasury() {
         functionName: "fundTreasury",
         args: [handle, inputProof],
       });
-      set("ok", `Treasury funded with $${amount} USDC (encrypted).`);
+      set("ok", `Treasury funded with $${amount} spUSD.`);
       setAmount("");
     } catch (e: unknown) {
       set("err", (e as Error).message ?? "Failed");
@@ -42,9 +41,11 @@ function FundTreasury() {
   }
 
   return (
-    <Card title="Fund Treasury">
-      <label>Amount (USDC)</label>
-      <input type="number" placeholder="10000" value={amount} onChange={(e) => setAmount(e.target.value)} />
+    <Card icon="💰" iconColor="card-icon-purple" title="Fund Treasury">
+      <div className="field">
+        <label>Amount (USDC)</label>
+        <input type="number" placeholder="10000" value={amount} onChange={(e) => setAmount(e.target.value)} />
+      </div>
       <Btn onClick={submit} busy={status.type === "busy"}>
         Encrypt & Fund
       </Btn>
@@ -71,20 +72,11 @@ function TreasuryBalance() {
   const hasBalance = handle && handle !== ZERO_HANDLE;
 
   async function decrypt() {
-    if (!address) {
-      set("err", "Connect your wallet first.");
-      return;
-    }
-    if (handleLoading) {
-      set("err", "Loading treasury data…");
-      return;
-    }
-    if (!hasBalance) {
-      set("err", "No treasury balance found. Fund the treasury first.");
-      return;
-    }
+    if (!address) return set("err", "Connect wallet first.");
+    if (handleLoading) return set("err", "Loading…");
+    if (!hasBalance) return set("err", "No treasury balance. Fund first.");
     try {
-      set("busy", "Requesting decryption signature…");
+      set("busy", "Requesting signature…");
       const raw = await decrypt64(handle, TOKEN_ADDRESS, address, signTypedDataAsync);
       setBalance(formatUSDC(raw));
       set("ok", "Decrypted.");
@@ -94,11 +86,19 @@ function TreasuryBalance() {
   }
 
   return (
-    <Card title="Treasury Balance">
-      {balance && <p className="decrypted-value">{balance}</p>}
-      {!handleLoading && !hasBalance && <p className="hint text-red">No balance — fund the treasury first.</p>}
-      <Btn onClick={decrypt} busy={status.type === "busy"} disabled={handleLoading || !hasBalance}>
-        Decrypt Balance
+    <Card icon="🔒" iconColor="card-icon-green" title="Treasury Balance">
+      {balance ? (
+        <div className="balance-display">
+          <span className="balance-label">Decrypted Balance</span>
+          <p className="decrypted-value">{balance}</p>
+        </div>
+      ) : (
+        !handleLoading && !hasBalance && (
+          <p className="hint text-muted">No balance — fund the treasury first.</p>
+        )
+      )}
+      <Btn onClick={decrypt} busy={status.type === "busy"} disabled={handleLoading || !hasBalance} variant="ghost">
+        {balance ? "Re-decrypt" : "Decrypt Balance"}
       </Btn>
       <Msg status={status} />
     </Card>
@@ -121,7 +121,6 @@ function AddEmployee() {
       set("busy", "Encrypting salary…");
       const usdc = BigInt(Math.round(parseFloat(salary) * Number(SCALE)));
       const { handle, inputProof } = await encrypt64(usdc, PAYROLL_ADDRESS, address);
-
       set("busy", "Sending transaction…");
       await writeContractAsync({
         address: PAYROLL_ADDRESS,
@@ -129,7 +128,7 @@ function AddEmployee() {
         functionName: "addEmployee",
         args: [wallet as `0x${string}`, name, handle, inputProof],
       });
-      set("ok", `${name} added with encrypted salary $${salary}.`);
+      set("ok", `${name} added.`);
       setWallet("");
       setName("");
       setSalary("");
@@ -139,13 +138,19 @@ function AddEmployee() {
   }
 
   return (
-    <Card title="Add Employee">
-      <label>Wallet Address</label>
-      <input placeholder="0x..." value={wallet} onChange={(e) => setWallet(e.target.value)} />
-      <label>Name</label>
-      <input placeholder="Alice" value={name} onChange={(e) => setName(e.target.value)} />
-      <label>Monthly Salary (USDC)</label>
-      <input type="number" placeholder="5000" value={salary} onChange={(e) => setSalary(e.target.value)} />
+    <Card icon="➕" iconColor="card-icon-green" title="Add Employee">
+      <div className="field">
+        <label>Wallet Address</label>
+        <input placeholder="0x…" value={wallet} onChange={(e) => setWallet(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>Name</label>
+        <input placeholder="Alice" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>Monthly Salary (USDC)</label>
+        <input type="number" placeholder="5000" value={salary} onChange={(e) => setSalary(e.target.value)} />
+      </div>
       <Btn onClick={submit} busy={status.type === "busy"}>
         Encrypt & Add
       </Btn>
@@ -166,10 +171,9 @@ function UpdateSalary() {
   async function submit() {
     if (!address || !wallet || !salary) return;
     try {
-      set("busy", "Encrypting new salary…");
+      set("busy", "Encrypting salary…");
       const usdc = BigInt(Math.round(parseFloat(salary) * Number(SCALE)));
       const { handle, inputProof } = await encrypt64(usdc, PAYROLL_ADDRESS, address);
-
       set("busy", "Sending transaction…");
       await writeContractAsync({
         address: PAYROLL_ADDRESS,
@@ -186,11 +190,15 @@ function UpdateSalary() {
   }
 
   return (
-    <Card title="Update Salary">
-      <label>Employee Wallet</label>
-      <input placeholder="0x..." value={wallet} onChange={(e) => setWallet(e.target.value)} />
-      <label>New Monthly Salary (USDC)</label>
-      <input type="number" placeholder="6500" value={salary} onChange={(e) => setSalary(e.target.value)} />
+    <Card icon="✏️" iconColor="card-icon-blue" title="Update Salary">
+      <div className="field">
+        <label>Employee Wallet</label>
+        <input placeholder="0x…" value={wallet} onChange={(e) => setWallet(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>New Monthly Salary (USDC)</label>
+        <input type="number" placeholder="6500" value={salary} onChange={(e) => setSalary(e.target.value)} />
+      </div>
       <Btn onClick={submit} busy={status.type === "busy"}>
         Encrypt & Update
       </Btn>
@@ -224,11 +232,13 @@ function RemoveEmployee() {
   }
 
   return (
-    <Card title="Remove Employee">
-      <label>Employee Wallet</label>
-      <input placeholder="0x..." value={wallet} onChange={(e) => setWallet(e.target.value)} />
-      <Btn onClick={submit} busy={status.type === "busy"} danger>
-        Remove
+    <Card icon="🗑️" iconColor="card-icon-red" title="Remove Employee">
+      <div className="field">
+        <label>Employee Wallet</label>
+        <input placeholder="0x…" value={wallet} onChange={(e) => setWallet(e.target.value)} />
+      </div>
+      <Btn onClick={submit} busy={status.type === "busy"} variant="danger">
+        Remove Employee
       </Btn>
       <Msg status={status} />
     </Card>
@@ -262,13 +272,17 @@ function ExecutePayroll() {
   }
 
   return (
-    <Card title="Execute Payroll">
+    <Card icon="🚀" iconColor="card-icon-amber" title="Execute Payroll">
       {info && (
-        <p className="hint">
-          Current cycle: <strong>#{String(info[0])}</strong>
-        </p>
+        <div className="info-row">
+          <span>Current cycle</span>
+          <strong>#{String(info[0])}</strong>
+        </div>
       )}
-      <Btn onClick={submit} busy={status.type === "busy"}>
+      <p className="hint">
+        Transfers encrypted salary to every active employee in a single transaction.
+      </p>
+      <Btn onClick={submit} busy={status.type === "busy"} variant="green">
         Run Payroll
       </Btn>
       <Msg status={status} />
@@ -276,7 +290,7 @@ function ExecutePayroll() {
   );
 }
 
-// ─── View Employee Salary (employer side) ─────────────────────────────────────
+// ─── View Employee Salary ─────────────────────────────────────────────────────
 
 function ViewEmployeeSalary() {
   const { address } = useAccount();
@@ -284,9 +298,8 @@ function ViewEmployeeSalary() {
   const [salary, setSalary] = useState<string | null>(null);
   const { status, set } = useStatus();
   const { signTypedDataAsync } = useSignTypedData();
-  const { writeContractAsync } = useWriteContract();
 
-  const { data: handle, refetch } = useReadContract({
+  const { refetch } = useReadContract({
     address: PAYROLL_ADDRESS,
     abi: PAYROLL_ABI,
     functionName: "getEmployeeSalary",
@@ -299,12 +312,8 @@ function ViewEmployeeSalary() {
     try {
       set("busy", "Fetching handle…");
       const { data: h } = await refetch();
-      if (!h) {
-        set("err", "Not found");
-        return;
-      }
-
-      set("busy", "Requesting decryption…");
+      if (!h) return set("err", "Employee not found.");
+      set("busy", "Requesting signature…");
       const raw = await decrypt64(h as string, PAYROLL_ADDRESS, address, signTypedDataAsync);
       setSalary(formatUSDC(raw));
       set("ok", "Decrypted.");
@@ -314,18 +323,22 @@ function ViewEmployeeSalary() {
   }
 
   return (
-    <Card title="View Employee Salary">
-      <label>Employee Wallet</label>
-      <input
-        placeholder="0x..."
-        value={wallet}
-        onChange={(e) => {
-          setWallet(e.target.value);
-          setSalary(null);
-        }}
-      />
-      {salary && <p className="decrypted-value">{salary}/mo</p>}
-      <Btn onClick={decrypt} busy={status.type === "busy"}>
+    <Card icon="👁️" iconColor="card-icon-purple" title="View Employee Salary">
+      <div className="field">
+        <label>Employee Wallet</label>
+        <input
+          placeholder="0x…"
+          value={wallet}
+          onChange={(e) => { setWallet(e.target.value); setSalary(null); }}
+        />
+      </div>
+      {salary && (
+        <div className="balance-display">
+          <span className="balance-label">Monthly Salary</span>
+          <p className="decrypted-value">{salary}<span className="unit">/mo</span></p>
+        </div>
+      )}
+      <Btn onClick={decrypt} busy={status.type === "busy"} variant="ghost">
         Decrypt Salary
       </Btn>
       <Msg status={status} />
@@ -338,15 +351,47 @@ function ViewEmployeeSalary() {
 export default function Employer({ isEmployer }: { isEmployer: boolean }) {
   return (
     <div className="page">
-      {!isEmployer && <div className="warning">⚠️ Connected wallet is not the employer. Write actions will fail.</div>}
-      <div className="grid">
-        <FundTreasury />
-        <TreasuryBalance />
-        <AddEmployee />
-        <UpdateSalary />
-        <RemoveEmployee />
-        <ExecutePayroll />
-        <ViewEmployeeSalary />
+      {!isEmployer && (
+        <div className="warning">
+          ⚠️ Connected wallet is not the employer — write actions will revert.
+        </div>
+      )}
+
+      <div className="section">
+        <div className="section-header">
+          <span className="section-icon">🏦</span>
+          <span className="section-title">Treasury</span>
+          <span className="section-tag section-tag-treasury">spUSD</span>
+        </div>
+        <div className="grid">
+          <FundTreasury />
+          <TreasuryBalance />
+          <ExecutePayroll />
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <span className="section-icon">👥</span>
+          <span className="section-title">Team Management</span>
+          <span className="section-tag section-tag-team">Employees</span>
+        </div>
+        <div className="grid">
+          <AddEmployee />
+          <UpdateSalary />
+          <RemoveEmployee />
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <span className="section-icon">🔍</span>
+          <span className="section-title">Inspect</span>
+          <span className="section-tag section-tag-payroll">Employer Only</span>
+        </div>
+        <div className="grid">
+          <ViewEmployeeSalary />
+        </div>
       </div>
     </div>
   );
@@ -354,10 +399,25 @@ export default function Employer({ isEmployer }: { isEmployer: boolean }) {
 
 // ─── Shared UI components ─────────────────────────────────────────────────────
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({
+  title,
+  icon,
+  iconColor,
+  children,
+  faucet,
+}: {
+  title: string;
+  icon?: string;
+  iconColor?: string;
+  children: React.ReactNode;
+  faucet?: boolean;
+}) {
   return (
-    <div className="card">
-      <h3>{title}</h3>
+    <div className={`card${faucet ? " card-faucet" : ""}`}>
+      <div className="card-header">
+        {icon && <div className={`card-icon ${iconColor ?? ""}`}>{icon}</div>}
+        <h3>{title}</h3>
+      </div>
       {children}
     </div>
   );
@@ -366,19 +426,23 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Btn({
   onClick,
   busy,
-  danger,
+  variant,
   disabled,
   children,
 }: {
   onClick: () => void;
   busy?: boolean;
-  danger?: boolean;
+  variant?: "danger" | "ghost" | "green";
   disabled?: boolean;
   children: React.ReactNode;
 }) {
+  const cls = variant === "danger" ? "btn btn-danger"
+    : variant === "ghost" ? "btn btn-ghost"
+    : variant === "green" ? "btn btn-green"
+    : "btn";
   return (
-    <button className={`btn ${danger ? "btn-danger" : ""}`} onClick={onClick} disabled={busy || disabled}>
-      {busy ? "…" : children}
+    <button className={cls} onClick={onClick} disabled={busy || disabled}>
+      {busy ? <><span className="spinner" /> Working…</> : children}
     </button>
   );
 }
