@@ -23,6 +23,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await execute("ConfidentialToken", { from: deployer, log: true }, "transferOwnership", deployed.address);
 
   console.log(`ConfidentialToken ownership transferred to ShieldPayroll`);
+
+  // Seed treasury with 10,000 spUSD (10_000 * 10^6 with 6 decimals)
+  await execute("ShieldPayroll", { from: deployer, log: true }, "seedTreasury", 10_000_000_000n);
+
+  console.log(`Treasury seeded with 10,000 spUSD`);
 };
 
 export default func;

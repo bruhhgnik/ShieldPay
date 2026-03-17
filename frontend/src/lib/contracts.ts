@@ -1,7 +1,7 @@
 // ─── Deployed Contract Addresses (Sepolia) ───────────────────────────────────
 
-export const PAYROLL_ADDRESS = "0xd5053e15c093e888F5f84Aa9eFAA7a0B8aB2f83e" as const;
-export const TOKEN_ADDRESS = "0x8447eE83A3c368e4a33a40908C0d807C9F74DB17" as const;
+export const PAYROLL_ADDRESS = "0x9a5a7B143B639C14541169922f2a49334793EE42" as const;
+export const TOKEN_ADDRESS = "0x97f0CCBDc9D07C1D3C0cdDB9225915f8456aDCBb" as const;
 
 // ─── ABIs ────────────────────────────────────────────────────────────────────
 
@@ -80,6 +80,13 @@ export const PAYROLL_ABI = [
   },
 
   // Employer writes
+  {
+    name: "seedTreasury",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "plaintextAmount", type: "uint64" }],
+    outputs: [],
+  },
   {
     name: "fundTreasury",
     type: "function",

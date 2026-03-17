@@ -171,6 +171,17 @@ contract ShieldPayroll is ZamaEthereumConfig {
 
     // ─── Employer: Treasury & Payroll ────────────────────────────────────────
 
+    /// @notice Seed the treasury with a known plaintext amount using trivial encryption.
+    ///         Used at deployment to pre-fund the treasury without a ZK proof.
+    ///         onlyEmployer — not callable after ownership transfer to a multisig, etc.
+    function seedTreasury(uint64 plaintextAmount) external onlyEmployer {
+        euint64 amount = FHE.asEuint64(plaintextAmount);
+        FHE.allow(amount, address(token));
+        token.mint(address(this), amount);
+        token.grantBalanceAccess(address(this), employer);
+        emit TreasuryFunded();
+    }
+
     /// @notice Fund the payroll treasury with encrypted tokens.
     ///         Proof is verified here (ShieldPayroll context), then internal
     ///         handle is passed to ConfidentialToken.mint.
